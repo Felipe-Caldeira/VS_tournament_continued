@@ -64,7 +64,7 @@ object TournamentBlocks {
         THRUSTER                 = register("thruster") {
             ThrusterBlock(
                 { 1.0 },
-                ParticleTypes.CAMPFIRE_SIGNAL_SMOKE
+                ParticleTypes.FLAME
             ) {
                 val t = TournamentConfig.SERVER.thrusterTiersNormal
                 if (t !in 1..5) {
@@ -76,7 +76,7 @@ object TournamentBlocks {
         THRUSTER_TINY            = register("tiny_thruster") {
             ThrusterBlock(
                 { TournamentConfig.SERVER.thrusterTinyForceMultiplier },
-                ParticleTypes.CAMPFIRE_COSY_SMOKE
+                ParticleTypes.FLAME
             ) {
                 val t = TournamentConfig.SERVER.thrusterTiersTiny
                 if (t !in 1..5) {

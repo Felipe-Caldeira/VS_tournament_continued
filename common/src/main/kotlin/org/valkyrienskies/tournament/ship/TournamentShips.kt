@@ -112,13 +112,14 @@ class TournamentShips: ShipForcesInducer {
 
             val tForce = physShip.transform.shipToWorld.transformDirection(force, Vector3d())
             val tPos = pos.toDouble().add(0.5, 0.5, 0.5).sub(physShip.transform.positionInShip)
+            val scale = physShip.transform.shipToWorldScaling.x()
 
             if (force.isFinite && (
                 TournamentConfig.SERVER.thrusterShutoffSpeed == -1.0
                     || physShip.poseVel.vel.length() < TournamentConfig.SERVER.thrusterShutoffSpeed
                 )
             ) {
-                physShip.applyInvariantForceToPos(tForce.mul(TournamentConfig.SERVER.thrusterSpeed * tier), tPos)
+                physShip.applyInvariantForceToPos(tForce.mul(TournamentConfig.SERVER.thrusterSpeed * tier * scale*scale), tPos)
             }
         }
 

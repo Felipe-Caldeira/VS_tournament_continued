@@ -23,10 +23,12 @@ import net.minecraft.world.level.storage.loot.LootContext
 import net.minecraft.world.phys.BlockHitResult
 import net.minecraft.world.phys.shapes.CollisionContext
 import net.minecraft.world.phys.shapes.VoxelShape
+import org.joml.Vector3d
 import org.valkyrienskies.core.api.ships.ServerShip
 import org.valkyrienskies.mod.common.getShipManagingPos
 import org.valkyrienskies.mod.common.getShipObjectManagingPos
 import org.valkyrienskies.mod.common.util.toJOMLD
+import org.valkyrienskies.mod.common.util.transformDirection
 import org.valkyrienskies.tournament.TournamentItems
 import org.valkyrienskies.tournament.TournamentProperties
 import org.valkyrienskies.tournament.ship.TournamentShips
@@ -34,6 +36,7 @@ import org.valkyrienskies.tournament.util.DirectionalShape
 import org.valkyrienskies.tournament.util.RotShapes
 import org.valkyrienskies.tournament.util.extension.toBlock
 import org.valkyrienskies.tournament.util.helper.Helper3d
+import org.valkyrienskies.tournament.util.math.lerp
 import java.util.*
 
 class ThrusterBlock(
@@ -147,7 +150,7 @@ class ThrusterBlock(
                 state.getValue(TournamentProperties.TIER).toDouble(),
                 state.getValue(FACING).normal.toJOMLD()
                     .mul(state.getValue(BlockStateProperties.POWER).toDouble()
-                            * mult())
+                    * mult())
             )
         }
     }
@@ -191,22 +194,35 @@ class ThrusterBlock(
     override fun animateTick(state: BlockState, level: Level, pos: BlockPos, random: Random) {
         super.animateTick(state, level, pos, random)
 
-        val rp = Helper3d.getShipRenderPosition(level, pos.toJOMLD())
+        val rp = Helper3d.getShipRenderPosition(level, pos.toJOMLD().add(0.5, 0.5, 0.5))
         if (level.isWaterAt(rp.toBlock())) {
             return
         }
 
-        if (state.getValue(BlockStateProperties.POWER) > 0) {
-            val dir = state.getValue(FACING)
+        val power = state.getValue(BlockStateProperties.POWER)
+        val jitter = 0.1
+        val shipVel = level.getShipObjectManagingPos(pos) ?.velocity ?: Vector3d()
 
-            val x = rp.x + (0.5 * (dir.stepX + 1))
-            val y = rp.y + (0.5 * (dir.stepY + 1))
-            val z = rp.z + (0.5 * (dir.stepZ + 1))
-            val speedX = dir.stepX * -0.4
-            val speedY = dir.stepY * -0.4
-            val speedZ = dir.stepZ * -0.4
 
-            level.addParticle(particle, x, y, z, speedX, speedY, speedZ)
+        if (power > 0) {
+            val shipDir = state.getValue(FACING)
+            val dir = Helper3d.getShipRenderDirection(level, pos.toJOMLD(), shipDir)
+
+
+            for (i in 0 until power * 2) {
+                val jitterX = level.random.nextFloat() * 2 * jitter - jitter
+                val jitterY = level.random.nextFloat() * 2 * jitter - jitter
+                val jitterZ = level.random.nextFloat() * 2 * jitter - jitter
+
+                val spreadDir = Vector3d(dir.x + jitterX, dir.y + jitterY, dir.z + jitterZ).normalize()
+                val speed = -lerp(0.075, 0.5, (power - 1) / 14.0)
+
+                val speedX = spreadDir.x * speed + shipVel.x() * 0.05
+                val speedY = spreadDir.y * speed + shipVel.y() * 0.05
+                val speedZ = spreadDir.z * speed + shipVel.z() * 0.05
+
+                level.addParticle(particle, rp.x, rp.y, rp.z, speedX, speedY, speedZ)
+            }
         }
     }
 

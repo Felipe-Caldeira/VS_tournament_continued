@@ -2,6 +2,7 @@ package org.valkyrienskies.tournament.util.helper
 
 import net.minecraft.client.multiplayer.ClientLevel
 import net.minecraft.core.BlockPos
+import net.minecraft.core.Direction
 import net.minecraft.core.particles.ParticleOptions
 import net.minecraft.server.level.ServerLevel
 import net.minecraft.world.level.Level
@@ -10,6 +11,7 @@ import org.valkyrienskies.mod.common.getShipManagingPos
 import org.valkyrienskies.mod.common.getShipObjectManagingPos
 import org.valkyrienskies.mod.common.util.toJOMLD
 import org.valkyrienskies.mod.common.util.toMinecraft
+import org.valkyrienskies.mod.common.util.transformDirection
 import org.valkyrienskies.tournament.util.extension.toBlock
 import kotlin.math.absoluteValue
 
@@ -26,6 +28,17 @@ object Helper3d {
             else -> pos
         }
 
+    fun getShipRenderDirection(level: ClientLevel, pos: Vector3d, dir: Direction): Vector3d =
+        level.getShipObjectManagingPos(pos)?.renderTransform?.shipToWorld?.transformDirection(dir)
+            ?: (dir.step() as Vector3d)
+
+    fun getShipRenderDirection(level: Level, pos: Vector3d, dir: Direction): Vector3d =
+        when (level) {
+            is ServerLevel -> convertShipDirectionToWorldSpace(level, pos.toBlock(), dir)
+            is ClientLevel -> getShipRenderDirection(level, pos, dir)
+            else -> pos
+        }
+
     fun convertShipToWorldSpace(level: Level, pos: BlockPos): Vector3d =
         level.getShipObjectManagingPos(pos) ?.shipToWorld ?.transformPosition(pos.toJOMLD())
             ?: pos.toJOMLD()
@@ -33,6 +46,10 @@ object Helper3d {
     fun convertShipToWorldSpace(level: Level, vec: Vector3d) : Vector3d {
         return convertShipToWorldSpace(level, vec.toBlock())
     }
+
+    fun convertShipDirectionToWorldSpace(level: Level, pos: BlockPos, dir: Direction): Vector3d =
+        level.getShipObjectManagingPos(pos) ?.shipToWorld ?.transformDirection(dir)
+            ?: (dir.step() as Vector3d)
 
     fun drawParticleLine(a: Vector3d, b: Vector3d, level: Level, particle: ParticleOptions) {
         val le = a.distance(b) * 3
